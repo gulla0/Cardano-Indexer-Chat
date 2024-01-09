@@ -1,0 +1,60 @@
+// processQuery.js
+const interpretQuery = require('./queryInterpreter');
+const fetchDataFromGoMaestro = require('./testApi');
+const askGpt = require('./gptPromptQuery');
+
+async function processNaturalLanguageQuery(query) {
+    // Interpret the query to understand the intent
+    const queryResult = interpretQuery(query);
+    let gptPrompt, gptResponse; // Declare variables here
+  
+    // Based on the type of query, decide which function to call
+    switch (queryResult.type) {
+      case 'current block height': 
+        // Directly fetch and return the current block height
+        try {
+            const currentBlockData = await fetchDataFromGoMaestro();
+            const blockHeight = currentBlockData.height;
+            return `The current block height is ${blockHeight}.`;
+        } catch (err) {
+            console.error('Failed to fetch block height:', err.message);
+            return 'There was an error fetching the current block height.';
+        }
+        break;
+      case 'chainTip':
+        // Fetch the latest block details and then create a GPT-3 prompt for detailed description
+        const latestBlock = await fetchDataFromGoMaestro();
+        gptPrompt = createGptPrompt({ type: 'chainTip', data: latestBlock });
+        gptResponse = await askGpt(gptPrompt);
+        console.log(gptResponse);
+        break;
+    case 'blockHash':
+        // Use the hash from the queryResult to fetch the block data
+        const blockData = await fetchDataFromGoMaestro(queryResult.hash);
+        gptPrompt = createGptPrompt({ type: 'blockHash', data: blockData });
+        gptResponse = await askGpt(gptPrompt);
+        console.log(gptResponse);
+        break;
+    case 'addressBalance':
+        // Use the address from the queryResult to fetch the balance data
+        const addressBalanceData = await fetchDataFromGoMaestro(queryResult.address); // Adjust fetchDataFromGoMaestro to handle address balance queries
+        const gptPromptAddressBalance = createGptPrompt({ type: 'addressBalance', data: addressBalanceData });
+        const gptResponseAddressBalance = await askGpt(gptPromptAddressBalance);
+        console.log(gptResponseAddressBalance);
+        break;
+    case 'transactionId':
+        // Fetch the transaction details using the transaction ID from the queryResult
+        const transactionData = await fetchDataFromGoMaestro(queryResult.txId); // Adjust fetchDataFromGoMaestro to fetch data for a transaction ID
+        const gptPromptTransaction = createGptPrompt({ type: 'transactionId', data: transactionData });
+        const gptResponseTransaction = await askGpt(gptPromptTransaction);
+        console.log(gptResponseTransaction);
+        break;                               
+              
+      // Add more cases as needed for different types of queries
+
+      default:
+        console.log('Query type not recognized. Please try again with a different query.');
+    }
+  }
+
+module.exports = processNaturalLanguageQuery;

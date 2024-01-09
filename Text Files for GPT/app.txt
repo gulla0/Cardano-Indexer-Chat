@@ -1,0 +1,24 @@
+document.getElementById('queryForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    const query = document.getElementById('userQuery').value;
+    const responseDiv = document.getElementById('response');
+
+    try {
+        const response = await fetch('/processQuery', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        responseDiv.innerHTML = `Response: <pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        responseDiv.innerHTML = `Error: ${error.message}`;
+    }
+});

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Blockchain Query Interface</title>
+</head>
+<body>
+    <h1>Ask About the Blockchain</h1>
+    <form id="queryForm" action="/processQuery" method="POST">
+        <input type="text" id="userQuery" name="query" placeholder="Enter your query here">
+        <button type="submit">Submit Query</button>
+    </form>
+    <div id="response"></div>
+    <script src="app.js"></script>
+</body>
+</html>
+    

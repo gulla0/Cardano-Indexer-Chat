@@ -1,0 +1,10 @@
+        const prompt = `Given a user query about blockchain, determine the appropriate Go Maestro API endpoint:\n\n`
+        + `"What is the latest block?" -> "latestBlock"\n`
+        + `"What is the current block?" -> "latestBlock"\n`
+        + `"Get block info for height 12345" -> "blockInfoByHeight"\n`
+        + `"Get block info for hash [64-character hash]" -> "blockInfoByHash"\n`
+        + `"Get block info for hash [NOT 64-character hash]" -> "Incorrect hash length: [length of the hash]. Expected 64 characters."\n`
+        + `"How many transactions for address addr1xyz?" -> "txCountByAddress"\n`
+        + `"List transactions for address addr1xyz" -> "txsByAddress"\n`
+        + `"Show UTXOs for address addr1xyz" -> "utxosByAddress"\n\n`
+        + `"${query}" -> ???`;

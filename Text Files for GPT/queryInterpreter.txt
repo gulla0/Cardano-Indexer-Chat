@@ -1,0 +1,41 @@
+function interpretQuery(query) {
+    // Convert the query to lowercase to ensure consistent matching
+    query = query.toLowerCase();
+  
+    // Check if the query is asking for the current block height
+    if (query.includes('current block height')) {
+      return { type: 'chainTip' };
+    } 
+    // Check if the query is asking for a block hash
+    else if (query.includes('block hash')) {
+      // The regex pattern for a Cardano block hash (which usually starts with 'block1' and is followed by base58 encoded string)
+      const hashPattern = /block hash\s(block1[a-z0-9]+)/;
+      const match = query.match(hashPattern);
+      const hash = match ? match[1] : null;
+      return { type: 'blockHash', hash: hash };
+    } 
+    // Check if the query is asking for transaction information
+    else if (query.includes('transaction')) {
+      // The regex pattern for a Cardano transaction ID (which is a base58 encoded string)
+      const txPattern = /transaction\s([a-z0-9]+)/;
+      const match = query.match(txPattern);
+      const txId = match ? match[1] : null;
+      return { type: 'transactionId', txId: txId };
+    } 
+    // Check if the query is asking for an address balance
+    else if (query.includes('address balance')) {
+      // The regex pattern for a Cardano address (which usually starts with 'addr1' and is followed by base58 encoded string)
+      const addressPattern = /address balance\s(addr1[a-z0-9]+)/;
+      const match = query.match(addressPattern);
+      const address = match ? match[1] : null;
+      return { type: 'addressBalance', address: address };
+    }
+    // Add more conditions as needed for different types of blockchain queries
+    
+    // Default response for unrecognized queries
+    return { type: 'unknown' };
+  }
+  
+  // Make the function available for import in other files
+  module.exports = interpretQuery;
+  

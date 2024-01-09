@@ -1,0 +1,147 @@
+const path = require('path');
+const fetchDataFromGoMaestro = require('./testApi');
+const interpretQuery = require('./queryInterpreter');
+const axios = require('axios');
+require('dotenv').config();
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+
+// Define the function right here
+async function processNaturalLanguageQuery(query) {
+    try {
+        // Fetch blockchain data first
+        const blockchainData = await fetchBlockDataFromGoMaestro('latest'); // Replace 'latest' with actual block identifier if needed
+
+        // Now create a payload that includes the blockchain data in the messages array
+        const payload = {
+            model: "gpt-3.5-turbo",
+            messages: [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": `The current block height is ${blockchainData.height}.`}, // Example of including blockchain data
+                {"role": "user", "content": query}
+            ]
+        };
+
+        // Log the payload for debugging
+        console.log("Sending request to OpenAI with payload:", payload);
+
+        // Use the payload variable in the axios.post call
+        const response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            payload,
+            {
+                headers: {
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        return response.data.choices[0].message.content;
+    } catch (error) {
+        console.error('Error processing natural language query:', error);
+        if (error.response) {
+            // Log the full response data from Axios error
+            console.error('Axios full error response:', error.response);
+        } else if (error.request) {
+            // The request was made but no response was received
+            console.error('Axios error request data:', error.request);
+        } else {
+            // Something happened in setting up the request that triggered an error
+            console.error('Error', error.message);
+        }
+        console.error('Error config:', error.config);
+        return null; // or handle the error as you see fit
+    }
+}     
+
+const port = 3000;
+const express = require('express');
+const app = express();
+
+
+// Middleware setup follows here
+app.use(express.static('public'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+async function fetchBlockDataFromGoMaestro(blockIdentifier) {
+    // If the blockIdentifier is 'latest', use the endpoint for the latest block information
+    const url = blockIdentifier === 'latest' 
+        ? `https://preprod.gomaestro-api.org/v1/blocks/latest`
+        : `https://preprod.gomaestro-api.org/v1/blocks/${blockIdentifier}`;
+    
+    try {
+        const response = await axios.get(url, {
+            headers: {
+                'Accept': 'application/json',
+                'api-key': process.env.GOMAESTRO_API_KEY
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching data:', error.response ? error.response.data : error.message);
+        return null; // Handle the error as you see fit
+    }
+}
+
+app.post('/processQuery', async (req, res) => {
+    console.log('Received request body:', req.body);
+    const userQuery = req.body.query;
+    console.log('Received user query:', userQuery);
+
+    if (!userQuery) {
+        console.error('No user query received');
+        return res.status(400).json({ error: 'No query provided' });
+    }
+
+    const queryResult = interpretQuery(userQuery);
+
+    switch (queryResult.type) {
+        case 'latest':
+            try {
+                const latestBlockData = await fetchBlockDataFromGoMaestro();
+                const blockchainDataSummary = `Block height is ${latestBlockData.height}, produced by ${latestBlockData.block_producer}.`;
+                const processedResponse = await processNaturalLanguageQuery(blockchainDataSummary);
+                console.log('Processed response:', processedResponse);
+                res.json({ response: processedResponse });
+            } catch (error) {
+                console.error('Error fetching latest block data:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+            break;
+
+        case 'blockHeight':
+            try {
+                const blockData = await fetchBlockDataFromGoMaestro(queryResult.height);
+                const blockchainDataSummary = `Block height ${queryResult.height} details: ${JSON.stringify(blockData)}`;
+                const processedResponse = await processNaturalLanguageQuery(blockchainDataSummary);
+                console.log('Processed response:', processedResponse);
+                res.json({ response: processedResponse });
+            } catch (error) {
+                console.error('Error fetching block data:', error);
+                res.status(500).json({ error: 'Error fetching block data' });
+            }
+            break;
+        
+        // ... Add your other cases here
+        
+        default:
+            try {
+                const processedResponse = await processNaturalLanguageQuery(userQuery);
+                console.log('Processed response:', processedResponse);
+                res.json({ response: processedResponse });
+            } catch (error) {
+                console.error('Error processing query with OpenAI:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+    }
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+  });
+  
+// Start the server
+app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`);
+});

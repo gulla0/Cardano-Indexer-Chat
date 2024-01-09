@@ -1,0 +1,21 @@
+The switch-case block you've provided maps responses from the OpenAI API to corresponding Go Maestro API call types. Based on these mappings, here are some example questions that could be asked to get information from the Go Maestro endpoints:
+
+For 'latestBlock':
+
+"What is the latest block?"
+For 'blockInfoByHeight':
+
+"Can you give me information about the block at height 123456?"
+For 'blockInfoByHash':
+
+"Can you give me information about the block with hash 'abcd1234'?"
+For 'txCountByAddress':
+
+"How many transactions have been made by the address 'abcd1234'?"
+For 'txsByAddress':
+
+"Can you list the transactions made by the address 'abcd1234'?"
+For 'utxosByAddress':
+
+"Can you list the unspent transaction outputs (UTXOs) for the address 'abcd1234'?"
+Please note that the actual questions that can be asked will depend on how the OpenAI API interprets the user's query and maps it to these cases.
